@@ -1,20 +1,19 @@
-import { useState, useEffect, useCallback } from "react"
-import { fetchPlaylist } from "../services/youtube"
+import { useState, useCallback } from "react"
+import { fetchPlaylist, extractPlaylistId } from "../services/youtube"
 import {
   getCache, setCache, getState, saveState,
-  getSettings, saveSettings, getSections, saveSections
+  getSettings, saveSettings
 } from "../utils/storage"
 
 export function usePlaylist() {
   const [playlist, setPlaylist] = useState(null)
   const [state, setState] = useState(getState())
   const [settings, setSettings] = useState(getSettings())
-  const [sections, setSections] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   const loadPlaylist = useCallback(async (url) => {
-    const id = (url.match(/[?&]list=([^&]+)/) || [])[1]
+    const id = extractPlaylistId(url)
     if (!id) { setError("No playlist ID found"); return }
 
     setLoading(true)
@@ -72,7 +71,6 @@ export function usePlaylist() {
   return {
     playlist, setPlaylist,
     state, settings,
-    sections, setSections,
     loading, error,
     loadPlaylist, toggleWatch, saveNote, updateSettings
   }

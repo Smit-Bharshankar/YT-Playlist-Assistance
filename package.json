@@ -2,7 +2,21 @@
   "name": "yt-playlist-tracker",
   "private": true,
   "version": "1.0.0",
+  "description": "Track a YouTube playlist in order with watch state, notes, and daily planning.",
   "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "youtube",
+    "playlist",
+    "tracker",
+    "watchlist",
+    "notes",
+    "react",
+    "vite"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",

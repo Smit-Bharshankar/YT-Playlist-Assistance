@@ -15,10 +15,11 @@ dist/
 dist-ssr/
 *.local
 
-# Environment files (SECRETS - never commit)
+# Environment files (secrets - never commit)
 .env
 .env.local
 .env.*.local
+!.env.example
 
 # IDE
 .vscode/
@@ -32,6 +33,3 @@ Thumbs.db
 
 # Vercel
 .vercel
-
-.vercel
-.env*

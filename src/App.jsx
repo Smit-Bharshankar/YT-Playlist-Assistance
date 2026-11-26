@@ -1,8 +1,12 @@
-import { useState, useCallback, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { usePlaylist } from "./hooks/usePlaylist"
+import { useBudgetDraft } from "./hooks/useBudgetDraft"
 import VideoCard from "./components/VideoCard"
 import WatchPlanner from "./components/WatchPlanner"
 import VideoModal from "./components/VideoModal"
+import {
+  LinkIcon, Search, Download, Upload, ChevronDown, Alert
+} from "./components/Icons"
 
 export default function App() {
   const [url, setUrl] = useState("")
@@ -19,6 +23,12 @@ export default function App() {
   } = usePlaylist()
 
   const handleImport = () => loadPlaylist(url)
+
+  const dailyGoal = useBudgetDraft(
+    settings.dailyBudgetMinutes,
+    settings.weekendBudgetMinutes,
+    (minutes) => updateSettings({ dailyBudgetMinutes: minutes })
+  )
 
   // Filter + search the video list
   const filteredVideos = useMemo(() => {
@@ -40,8 +50,9 @@ export default function App() {
   // Determine next up video (first unwatched in full playlist order)
   const unwatchedFirst = playlist?.items.find(v => !state[v.videoId] || !state[v.videoId].watched) || null
 
-  // Assign day numbers based on daily budget
-  const dailySec = settings.dailyBudgetMinutes * 60
+  // Assign day numbers from the daily budget, falling back to the weekend budget when daily is 0
+  const planMinutes = settings.dailyBudgetMinutes > 0 ? settings.dailyBudgetMinutes : settings.weekendBudgetMinutes
+  const dailySec = planMinutes * 60
   const videoDays = useMemo(() => {
     if (!playlist || dailySec <= 0) return {}
     let day = 1
@@ -114,66 +125,114 @@ export default function App() {
   return (
     <div className="app">
       <header className="top-bar">
-        <div className="app-header">
-          <div className="app-icon">🎬</div>
-          <div>
-            <h1>Playlist Tracker</h1>
-            <span className="subtitle">• Watch, track, take notes</span>
+        <div className="top-bar__inner">
+          <div className="app-header">
+            <span className="app-mark">
+              <img src="/logo.svg" alt="" width="36" height="36" />
+            </span>
+            <div className="app-header__text">
+              <h1>Playlist Tracker</h1>
+              <p className="subtitle">Watch, track, take notes</p>
+            </div>
+          </div>
+
+          <div className="top-bar__actions">
+            <button onClick={handleExport} className="btn btn--ghost" type="button">
+              <Download size={16} />
+              Backup
+            </button>
+            <button
+              onClick={() => {
+                const input = document.querySelector('input[type="file"][accept=".json"]')
+                if (input) input.click()
+              }}
+              className="btn btn--ghost"
+              type="button"
+            >
+              <Upload size={16} />
+              Restore
+            </button>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+              className="visually-hidden"
+              ref={null}
+              tabIndex={-1}
+              aria-hidden="true"
+            />
           </div>
         </div>
 
         <div className="controls-row">
-          <input
-            type="text"
-            placeholder="Paste YouTube playlist URL"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-          />
-          <button onClick={handleImport} disabled={loading || !url}>
+          <div className="field field--icon">
+            <LinkIcon size={18} className="field__icon" />
+            <input
+              type="text"
+              placeholder="Paste YouTube playlist URL"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              aria-label="YouTube playlist URL"
+            />
+          </div>
+          <button
+            onClick={handleImport}
+            disabled={loading || !url}
+            className="btn btn--primary"
+            type="button"
+          >
             {loading ? "Importing…" : "Import"}
           </button>
-          {error && <span className="error">{error}</span>}
+          {error && (
+            <span className="error" role="alert">
+              <Alert size={14} />
+              {error}
+            </span>
+          )}
         </div>
 
-        {/* Daily Goal - small, collapsible */}
-        <div className="daily-goal">
-          <button className="daily-goal-toggle" onClick={() => setShowGoal(!showGoal)}>
-            {showGoal ? "▾" : "▸"} Daily goal
+        <div className="goal-row">
+          <button
+            className="disclosure"
+            onClick={() => setShowGoal(!showGoal)}
+            aria-expanded={showGoal}
+            type="button"
+          >
+            <ChevronDown
+              size={14}
+              className={`disclosure__chevron ${showGoal ? "is-open" : ""}`}
+            />
+            Daily goal
+            {!showGoal && (
+              <span className="goal-summary">{settings.dailyBudgetMinutes} min / day</span>
+            )}
           </button>
           {showGoal && (
-            <>
-              <span style={{ marginRight: 8, color: "var(--color-text-secondary)" }}>Watch</span>
-              <input
-                type="number"
-                value={settings.dailyBudgetMinutes}
-                onChange={e => updateSettings({ dailyBudgetMinutes: parseInt(e.target.value) || 30 })}
-              />
-              <span style={{ marginLeft: 6, color: "var(--color-text-secondary)" }}>min / day</span>
-              <button
-                onClick={handleExport}
-                className="btn-outline"
-                style={{ marginLeft: 10, padding: "6px 12px" }}
-              >
-                💾 Backup
-              </button>
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportFile}
-                style={{ display: "none" }}
-                ref={null}
-              />
-              <button
-                onClick={() => {
-                  const input = document.querySelector('input[type="file"][accept=".json"]')
-                  if (input) input.click()
-                }}
-                className="btn-outline"
-                style={{ marginLeft: 6, padding: "6px 12px" }}
-              >
-                📥 Restore
-              </button>
-            </>
+            <div className="goal-field-group">
+              <label className="goal-fields" htmlFor="daily-goal">
+                <span>Watch</span>
+                <input
+                  ref={dailyGoal.inputRef}
+                  id="daily-goal"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="off"
+                  value={dailyGoal.draft}
+                  onChange={dailyGoal.handleChange}
+                  onBlur={dailyGoal.handleBlur}
+                  onFocus={dailyGoal.handleFocus}
+                  aria-invalid={dailyGoal.error ? true : undefined}
+                  aria-describedby={dailyGoal.error ? "daily-goal-error" : undefined}
+                />
+                <span>min / day</span>
+              </label>
+              {dailyGoal.error && (
+                <span className="budget-error" id="daily-goal-error" role="alert">
+                  {dailyGoal.error}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </header>
@@ -182,54 +241,83 @@ export default function App() {
         <div className="content">
           <main className="main-panel">
             <div className="filter-bar">
-              <input
-                type="text"
-                placeholder="Search videos or channel…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ flex: 1, minWidth: "200px" }}
-              />
-              <button className={`filter-chip ${filter === "all" ? "active" : ""}`} onClick={() => setFilter("all")}>
-                All
-              </button>
-              <button className={`filter-chip ${filter === "watched" ? "active" : ""}`} onClick={() => setFilter("watched")}>
-                Watched
-              </button>
-              <button className={`filter-chip ${filter === "unwatched" ? "active" : ""}`} onClick={() => setFilter("unwatched")}>
-                Unwatched
-              </button>
+              <div className="field field--icon filter-bar__search">
+                <Search size={18} className="field__icon" />
+                <input
+                  type="text"
+                  placeholder="Search videos or channel…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  aria-label="Search videos or channel"
+                />
+              </div>
+              <div className="segmented" role="group" aria-label="Filter videos">
+                <button
+                  className={`filter-chip ${filter === "all" ? "active" : ""}`}
+                  onClick={() => setFilter("all")}
+                  aria-pressed={filter === "all"}
+                  type="button"
+                >
+                  All
+                </button>
+                <button
+                  className={`filter-chip ${filter === "watched" ? "active" : ""}`}
+                  onClick={() => setFilter("watched")}
+                  aria-pressed={filter === "watched"}
+                  type="button"
+                >
+                  Watched
+                </button>
+                <button
+                  className={`filter-chip ${filter === "unwatched" ? "active" : ""}`}
+                  onClick={() => setFilter("unwatched")}
+                  aria-pressed={filter === "unwatched"}
+                  type="button"
+                >
+                  Unwatched
+                </button>
+              </div>
             </div>
 
             {filteredVideos.length === 0 ? (
-              <div className="empty">
+              <div className="empty empty--filter" role="status">
                 <p>No videos match your filter.</p>
               </div>
             ) : (
-              <div className="video-list">
-                {filteredVideos.map((video, i) => {
-                  const isNextUp = unwatchedFirst && video.videoId === unwatchedFirst.videoId
-                  const isExpanded = expandedCard === video.videoId
-                  const day = videoDays[video.videoId]
-                  const prevDay = i > 0 ? videoDays[filteredVideos[i - 1].videoId] : null
-                  const showDayDivider = day && day !== prevDay
-                  return (
-                    <div key={video.videoId}>
-                      {showDayDivider && <div className="day-divider">Day {day}</div>}
-                      <VideoCard
-                        video={video}
-                        state={state}
-                        onToggle={toggleWatch}
-                        onSaveNote={saveNote}
-                        index={playlist.items.findIndex(v => v.videoId === video.videoId) + 1}
-                        isNextUp={isNextUp}
-                        day={day}
-                        isExpanded={isExpanded}
-                        onToggleExpand={() => setExpandedCard(expandedCard === video.videoId ? null : video.videoId)}
-                        onOpenModal={() => openModal(video)}
-                      />
-                    </div>
-                  )
-                })}
+              <div className="ledger">
+                <div className="ledger__head" aria-hidden="true">
+                  <span>No.</span>
+                  <span />
+                  <span>Video</span>
+                  <span className="ledger__head-duration">Length</span>
+                  <span className="ledger__head-status">Watched</span>
+                </div>
+                <div className="video-list">
+                  {filteredVideos.map((video, i) => {
+                    const isNextUp = unwatchedFirst && video.videoId === unwatchedFirst.videoId
+                    const isExpanded = expandedCard === video.videoId
+                    const day = videoDays[video.videoId]
+                    const prevDay = i > 0 ? videoDays[filteredVideos[i - 1].videoId] : null
+                    const showDayDivider = day && day !== prevDay
+                    return (
+                      <div key={video.videoId}>
+                        {showDayDivider && <div className="day-divider">Day {day}</div>}
+                        <VideoCard
+                          video={video}
+                          state={state}
+                          onToggle={toggleWatch}
+                          onSaveNote={saveNote}
+                          index={playlist.items.findIndex(v => v.videoId === video.videoId) + 1}
+                          isNextUp={isNextUp}
+                          day={day}
+                          isExpanded={isExpanded}
+                          onToggleExpand={() => setExpandedCard(expandedCard === video.videoId ? null : video.videoId)}
+                          onOpenModal={() => openModal(video)}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </main>
@@ -243,12 +331,37 @@ export default function App() {
             />
           </aside>
         </div>
+      ) : loading ? (
+        <div className="loading-state" role="status" aria-busy="true">
+          <span className="visually-hidden">Importing playlist</span>
+          <div className="skeleton-list" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div className="skeleton-row" key={i}>
+                <span className="skeleton skeleton--rank" />
+                <span className="skeleton skeleton--thumb" />
+                <span className="skeleton-block">
+                  <span className="skeleton skeleton--title" />
+                  <span className="skeleton skeleton--meta" />
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
-        <div className="empty" style={{ padding: "60px 20px" }}>
+        <div className="empty empty--start">
+          <img className="empty__logo" src="/logo.svg" alt="" width="48" height="48" />
           <p>Paste a YouTube playlist URL to begin.</p>
-          <p>Videos stay in playlist order. Click any card to play and take notes.</p>
+          <p>Videos stay in playlist order. Click any video to play and take notes.</p>
         </div>
       )}
+
+      <footer className="app-footer">
+        <span className="app-footer__brand">
+          <img src="/logo.svg" alt="" width="20" height="20" />
+          Playlist Tracker
+        </span>
+        <span className="app-footer__note">Progress and notes stay in this browser.</span>
+      </footer>
 
       <VideoModal video={modalVideo} isOpen={!!modalVideo} onClose={closeModal} />
     </div>

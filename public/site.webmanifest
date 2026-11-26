@@ -1,0 +1,35 @@
+{
+  "name": "Playlist Tracker",
+  "short_name": "Playlist",
+  "description": "Track a YouTube playlist in order, mark what you have watched, keep notes, and plan daily viewing time.",
+  "id": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#202428",
+  "theme_color": "#202428",
+  "categories": ["productivity", "entertainment"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
