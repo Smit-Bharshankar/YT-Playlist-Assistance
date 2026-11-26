@@ -1,5 +1,4 @@
 // Vercel serverless function: proxies YouTube Data API v3
-// Your YouTube API key stays secret in Vercel Environment Variables
 
 module.exports = async function handler(req, res) {
   // CORS
@@ -16,6 +15,7 @@ module.exports = async function handler(req, res) {
   const apiKey = process.env.YOUTUBE_API_KEY;
 
   if (!apiKey) {
+    console.error("ERROR: YOUTUBE_API_KEY is not set");
     return res.status(500).json({ error: "YouTube API key not configured" });
   }
   if (!playlistId) {
@@ -29,19 +29,37 @@ module.exports = async function handler(req, res) {
       `part=snippet,contentDetails&playlistId=${playlistId}&maxResults=50&key=${apiKey}` +
       (pageToken ? `&pageToken=${pageToken}` : "");
 
+    console.log("Fetching playlist:", playlistId);
     const ytRes = await fetch(url);
+    console.log("YouTube playlistItems status:", ytRes.status);
+
     if (!ytRes.ok) {
-      return res.status(ytRes.status).json({ error: "YouTube API error" });
+      const errText = await ytRes.text();
+      console.error("YouTube playlistItems error:", errText);
+      return res.status(ytRes.status).json({ error: "YouTube API error: " + errText });
     }
     const data = await ytRes.json();
+
+    if (!data.items || data.items.length === 0) {
+      return res.status(200).json({
+        playlistId,
+        items: [],
+        nextPageToken: null,
+        totalResults: 0
+      });
+    }
 
     // Fetch durations for the video IDs on this page
     const videoIds = data.items.map((item) => item.contentDetails.videoId).join(",");
     const durRes = await fetch(
       `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`
     );
+    console.log("YouTube videos status:", durRes.status);
+
     if (!durRes.ok) {
-      return res.status(durRes.status).json({ error: "YouTube API error (durations)" });
+      const errText = await durRes.text();
+      console.error("YouTube videos error:", errText);
+      return res.status(durRes.status).json({ error: "YouTube API error (durations): " + errText });
     }
     const durData = await durRes.json();
 
@@ -75,6 +93,7 @@ module.exports = async function handler(req, res) {
       totalResults: data.pageInfo?.totalResults || items.length
     });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    console.error("Function crash:", err);
+    return res.status(500).json({ error: err.message || "Unknown error" });
   }
 };
