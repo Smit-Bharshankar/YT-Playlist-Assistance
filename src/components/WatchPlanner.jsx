@@ -17,7 +17,7 @@ export default function WatchPlanner({ playlist, state, settings, updateSettings
             value={settings.dailyBudgetMinutes}
             onChange={e => updateSettings({ dailyBudgetMinutes: parseInt(e.target.value) || 30 })}
           />
-          <span className="unit">min</span>
+          <span className="unit">minutes</span>
         </div>
         <div className="budget-field">
           <label>Weekend budget</label>
@@ -26,13 +26,13 @@ export default function WatchPlanner({ playlist, state, settings, updateSettings
             value={settings.weekendBudgetMinutes}
             onChange={e => updateSettings({ weekendBudgetMinutes: parseInt(e.target.value) || 60 })}
           />
-          <span className="unit">min</span>
+          <span className="unit">minutes</span>
         </div>
       </div>
       <div className="planner-stats">
         <span><strong>{unwatched.length}</strong> videos left</span>
         <span>•</span>
-        <span><strong>{Math.floor(remainingSec / 60)}h {remainingSec % 60}m</strong> remaining</span>
+        <span><strong>{Math.floor(remainingSec / 3600)}h {Math.floor((remainingSec % 3600) / 60)}m</strong> remaining</span>
       </div>
       <div className="planner-result">
         Est. days to finish: <strong>{days}</strong> day{days !== 1 ? "s" : ""}

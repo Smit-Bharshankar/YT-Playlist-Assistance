@@ -24,7 +24,11 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>🎬 Playlist Tracker</h1>
+        <div className="header-top">
+          <div className="app-icon">🎬</div>
+          <h1>Playlist Tracker</h1>
+        </div>
+        <p className="subtitle">Videos stay in playlist order. Click any card to play. First unwatched video is highlighted.</p>
         <div className="toolbar">
           <input
             type="text"
@@ -33,19 +37,17 @@ export default function App() {
             onChange={e => setUrl(e.target.value)}
           />
           <button onClick={handleImport} disabled={loading || !url}>
-            {loading ? "Loading…" : "Import"}
+            {loading ? "Importing…" : "Import"}
           </button>
           {error && <span className="error">{error}</span>}
         </div>
-        <p className="hint">
-          Videos stay in playlist order. Click any card to play. First unwatched video is highlighted.
-        </p>
+        <p className="hint">All data saves to your browser — no account needed.</p>
       </header>
 
       {playlist ? (
         <div className="content">
           <aside className="sidebar">
-            <h3>{playlist.title || "Playlist"}</h3>
+            <h3>Playlist</h3>
             <p className="playlist-summary">
               {playlist.totalVideos} videos • {Math.floor(playlist.totalDurationSec / 60)} min total
             </p>

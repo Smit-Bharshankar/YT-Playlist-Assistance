@@ -18,7 +18,9 @@ export default function VideoCard({ video, state, onToggle, onSaveNote, index, i
       <div className="info">
         <div className={`title ${cur.watched ? "done" : ""}`}>{video.title}</div>
         <div className="meta">
-          {video.channel} • {minutes}:{secs.toString().padStart(2, "0")}
+          <span>{video.channel}</span>
+          <span>•</span>
+          <span className="duration-chip">{minutes}:{secs.toString().padStart(2, "0")}</span>
         </div>
         <div className="card-controls">
           <label className="watch" onClick={stop}>
