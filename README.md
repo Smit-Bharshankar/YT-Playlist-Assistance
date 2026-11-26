@@ -83,7 +83,7 @@ The build output is `dist/`.
 
 `vercel.json` keeps the API route working, serves the single-page app, adds basic security headers, and gives hashed assets a long cache.
 
-The canonical, `og:url`, `og:image`, and `twitter:image` values in `index.html` currently point at `https://yt-playlist-assistance.vercel.app/`. If you add a custom domain, update those four values so social crawlers and search engines use the new origin.
+The production URL is `https://playlist.smitxcode.in/`. The canonical, `og:url`, `og:image`, and `twitter:image` values in `index.html` point at that origin. If the domain changes, update those four values so social crawlers and search engines use the new origin.
 
 ## Security notes
 
