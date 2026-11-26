@@ -1,6 +1,6 @@
 // Vercel serverless function: proxies YouTube Data API v3
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -96,4 +96,4 @@ module.exports = async function handler(req, res) {
     console.error("Function crash:", err);
     return res.status(500).json({ error: err.message || "Unknown error" });
   }
-};
+}
