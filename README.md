@@ -8,18 +8,21 @@
 
 ## What it does
 
-Paste a YouTube playlist URL, then work through it in playlist order. Playlist Tracker keeps the watched state, notes, and daily planning in your browser, so there is no account and no server-side history.
+Paste a YouTube playlist URL, then work through it in playlist order. Saved playlists appear in the library, and each one keeps its own watched state, notes, and daily planning in your browser. There is no account and no server-side history.
 
 ## Features
 
 - Import any public YouTube playlist by URL.
+- Saved playlist library with per-playlist progress, open, and remove.
+- Auto-restore the last active playlist after a refresh.
+- Per-playlist watched state and notes, so two playlists never share progress.
 - Watch the playlist in order with a clear “Up next” row.
 - Mark videos watched and keep per-video notes.
 - Search by title or channel; filter to watched or unwatched.
 - Daily and weekend budgets with numeric validation.
 - Planner readout: time remaining, videos left, estimated days, and suggested sessions.
 - Embedded player plus a direct “Watch on YouTube” link.
-- JSON backup and restore for watch state, notes, and settings.
+- JSON backup and restore for all saved playlists, states, and settings. Legacy single-playlist backups still import.
 - Responsive layout from 320px up, with keyboard focus states and reduced-motion support.
 
 ## Stack
@@ -95,10 +98,11 @@ The production URL is `https://playlist.smitxcode.in/`. The canonical, `og:url`,
 ## Data and privacy
 
 - Playlist metadata is cached in `localStorage` for 24 hours.
-- Watch state, notes, and budgets stay in `localStorage`; they are not sent to a server.
+- Watch state and notes are stored per playlist; budgets stay global.
 - Backup and restore use a JSON file you control.
 - The serverless function only forwards playlist requests to YouTube; it does not store user data.
-- Browser storage keys: `yt_playlist_cache`, `yt_watch_state`, `yt_settings`.
+- Browser storage keys: `yt_playlist_cache`, `yt_playlist_state`, `yt_active_playlist`, `yt_settings`.
+- The old global `yt_watch_state` key is migrated once to the most recently updated saved playlist, then removed.
 
 ## Project structure
 
@@ -120,10 +124,11 @@ public/
 src/
   App.jsx              App shell and screen composition
   index.css            Tokens, layout, components, states
-  components/          Icons, video row, planner, modal, error boundary
-  hooks/               Playlist state and budget draft logic
+  components/          Icons, video row, planner, library, modal, error boundary
+  hooks/               Active playlist, library, and budget draft logic
   services/youtube.js  Playlist API client
-  utils/storage.js     localStorage helpers
+  utils/storage.js     localStorage, migration, backup, and restore helpers
+  utils/format.js      Duration, date, and playlist-label helpers
 ```
 
 ## Brand assets
@@ -136,8 +141,8 @@ The OG card uses the same graphite, amber, and pale-ink palette as the app.
 
 These are intentional notes, not hidden behavior:
 
-- The last playlist is not restored automatically after a reload. Paste or import it again.
 - The ledger “Day N” groups count the whole playlist, while the planner’s “Session N” groups count only unwatched videos.
+- Playlist titles and metadata refresh on import when the cache is older than 24 hours or the title is missing. There is no separate refresh button in the library yet.
 - The weekend budget is a fallback when the daily budget is `0`; there is no separate weekday/weekend schedule yet.
 - The header Daily goal and the planner Daily budget edit the same setting.
 - State is per-browser. Use Backup and Restore to move it between browsers.

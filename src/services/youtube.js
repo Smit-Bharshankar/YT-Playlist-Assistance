@@ -18,9 +18,11 @@ async function fetchOnePage(playlistId, pageToken = "") {
 export async function fetchPlaylist(playlistId) {
   let allItems = []
   let pageToken = ""
+  let title = ""
 
   while (true) {
     const data = await fetchOnePage(playlistId, pageToken)
+    if (!title && data.title) title = data.title
     allItems.push(...data.items)
 
     if (!data.nextPageToken) break
@@ -29,6 +31,7 @@ export async function fetchPlaylist(playlistId) {
 
   return {
     playlistId,
+    title,
     items: allItems,
     totalVideos: allItems.length,
     totalDurationSec: allItems.reduce((a, b) => a + b.durationSec, 0),

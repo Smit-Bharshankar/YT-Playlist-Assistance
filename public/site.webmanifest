@@ -1,7 +1,7 @@
 {
   "name": "Playlist Tracker",
   "short_name": "Playlist",
-  "description": "Track a YouTube playlist in order, mark what you have watched, keep notes, and plan daily viewing time.",
+  "description": "Track YouTube playlists in order, keep per-playlist watch state and notes, and plan daily viewing time.",
   "id": "/",
   "lang": "en",
   "dir": "ltr",

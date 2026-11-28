@@ -85,6 +85,28 @@ export function Note({ size = 16, className }) {
   )
 }
 
+export function LibraryIcon({ size = 16, className }) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="4" y="4" width="16" height="5" rx="1.5" />
+      <rect x="4" y="11" width="16" height="5" rx="1.5" />
+      <path d="M4 20h10" />
+    </Svg>
+  )
+}
+
+export function Trash({ size = 16, className }) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M4 7h16" />
+      <path d="M9 7V4h6v3" />
+      <path d="M6 7l1 13h10l1-13" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+    </Svg>
+  )
+}
+
 export function Clock({ size = 16, className }) {
   return (
     <Svg size={size} className={className}>

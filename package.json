@@ -2,7 +2,7 @@
   "name": "yt-playlist-tracker",
   "private": true,
   "version": "1.0.0",
-  "description": "Track a YouTube playlist in order with watch state, notes, and daily planning.",
+  "description": "Track multiple YouTube playlists with per-playlist watch state, notes, and daily planning.",
   "type": "module",
   "license": "UNLICENSED",
   "engines": {

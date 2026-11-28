@@ -43,10 +43,27 @@ export default async function handler(req, res) {
     if (!data.items || data.items.length === 0) {
       return res.status(200).json({
         playlistId,
+        title: null,
         items: [],
         nextPageToken: null,
         totalResults: 0
       });
+    }
+
+    // Fetch the playlist title once, on the first page.
+    let title = null;
+    if (!pageToken) {
+      try {
+        const metaRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${playlistId}&key=${apiKey}`
+        );
+        if (metaRes.ok) {
+          const metaData = await metaRes.json();
+          title = metaData.items?.[0]?.snippet?.title || null;
+        }
+      } catch (metaErr) {
+        console.warn("Playlist metadata error:", metaErr);
+      }
     }
 
     // Fetch durations for the video IDs on this page
@@ -88,6 +105,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       playlistId,
+      title,
       items,
       nextPageToken: data.nextPageToken || null,
       totalResults: data.pageInfo?.totalResults || items.length

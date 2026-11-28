@@ -488,6 +488,40 @@ p:not([class]) {
   gap: var(--space-md);
 }
 
+.playlist-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
+
+.playlist-head__text { min-width: 0; }
+
+.playlist-title {
+  max-width: none;
+  color: var(--color-ink);
+  font-size: var(--text-xl);
+  line-height: 1.15;
+}
+
+.playlist-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-2xs);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.playlist-meta__duration {
+  color: var(--color-cool);
+  font-family: var(--font-outlier);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ===== Filter bar ===== */
 .filter-bar {
   display: flex;
@@ -934,6 +968,126 @@ p:not([class]) {
   50% { opacity: 0.5; }
 }
 
+/* ===== Playlist library ===== */
+.library-view {
+  padding-block: var(--space-lg) var(--space-2xl);
+}
+
+.library-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--rule-hair) solid var(--color-rule-2);
+}
+
+.library-title {
+  max-width: none;
+  color: var(--color-ink);
+  font-size: var(--text-xl);
+}
+
+.library-count {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.library-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 110px 32px;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+  border-left: 2px solid transparent;
+}
+
+.library-row.is-active { border-left-color: var(--color-accent); }
+
+.library-row__open {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.library-row__title {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: var(--text-md);
+  font-weight: 500;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color var(--dur-micro) var(--ease-out);
+}
+
+.library-row__open:hover .library-row__title { color: var(--color-accent); }
+
+.library-row__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+}
+
+.library-row__duration {
+  color: var(--color-cool);
+  font-family: var(--font-outlier);
+  font-variant-numeric: tabular-nums;
+}
+
+.library-row__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.library-row__count {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.library-row__meter {
+  display: block;
+  height: 2px;
+  background: var(--color-rule-2);
+}
+
+.library-row__meter > span {
+  display: block;
+  height: 100%;
+  background: var(--color-cool);
+}
+
+.library-row__date {
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.library-row__remove {
+  flex-shrink: 0;
+  align-self: center;
+}
+
 /* ===== Footer ===== */
 .app-footer {
   display: flex;
@@ -1376,6 +1530,34 @@ p:not([class]) {
   .segmented { width: 100%; }
 
   .filter-chip { flex: 1; }
+
+  .playlist-title { font-size: var(--text-lg); }
+
+  .library-row {
+    grid-template-columns: minmax(0, 1fr) 32px;
+    grid-template-areas:
+      "main remove"
+      "progress remove"
+      "date remove";
+    gap: var(--space-xs) var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  .library-row__open { grid-area: main; }
+
+  .library-row__title { white-space: normal; }
+
+  .library-row__progress { grid-area: progress; }
+
+  .library-row__date {
+    grid-area: date;
+    text-align: left;
+  }
+
+  .library-row__remove {
+    grid-area: remove;
+    align-self: start;
+  }
 
   .ledger__head { display: none; }
 

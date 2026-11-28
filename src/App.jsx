@@ -1,11 +1,14 @@
 import { useState, useMemo } from "react"
 import { usePlaylist } from "./hooks/usePlaylist"
 import { useBudgetDraft } from "./hooks/useBudgetDraft"
+import { exportData, importData } from "./utils/storage"
+import { formatTotalDuration, playlistLabel } from "./utils/format"
 import VideoCard from "./components/VideoCard"
 import WatchPlanner from "./components/WatchPlanner"
 import VideoModal from "./components/VideoModal"
+import PlaylistLibrary from "./components/PlaylistLibrary"
 import {
-  LinkIcon, Search, Download, Upload, ChevronDown, Alert
+  LinkIcon, Search, Download, Upload, ChevronDown, Alert, LibraryIcon, Play
 } from "./components/Icons"
 
 export default function App() {
@@ -15,14 +18,40 @@ export default function App() {
   const [search, setSearch] = useState("")
   const [showGoal, setShowGoal] = useState(false)
   const [expandedCard, setExpandedCard] = useState(null)
+  const [showLibrary, setShowLibrary] = useState(false)
 
   const {
-    playlist, state, settings,
+    playlist, library, activePlaylistId,
+    state, settings,
     loading, error,
-    loadPlaylist, toggleWatch, saveNote, updateSettings
+    loadPlaylist, openPlaylist, removePlaylist,
+    toggleWatch, saveNote, updateSettings
   } = usePlaylist()
 
-  const handleImport = () => loadPlaylist(url)
+  const resetPlaylistView = () => {
+    setFilter("all")
+    setSearch("")
+    setExpandedCard(null)
+    setModalVideo(null)
+  }
+
+  const handleImport = () => {
+    resetPlaylistView()
+    setShowLibrary(false)
+    loadPlaylist(url)
+  }
+
+  const handleOpenPlaylist = (id) => {
+    resetPlaylistView()
+    openPlaylist(id)
+    setShowLibrary(false)
+  }
+
+  const handleRemovePlaylist = (id) => {
+    if (window.confirm("Remove this playlist and its saved progress? This cannot be undone.")) {
+      removePlaylist(id)
+    }
+  }
 
   const dailyGoal = useBudgetDraft(
     settings.dailyBudgetMinutes,
@@ -72,20 +101,13 @@ export default function App() {
   const openModal = (video) => setModalVideo(video)
   const closeModal = () => setModalVideo(null)
 
-  // Export / Import
   const handleExport = () => {
-    const data = {
-      state: state,
-      settings: settings,
-      notes: Object.fromEntries(
-        Object.entries(state).map(([id, s]) => [id, s.notes || ""])
-      )
-    }
+    const data = exportData()
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
     const url2 = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url2
-    a.download = `playlist-backup-${Date.now()}.json`
+    a.download = `playlist-tracker-backup-${Date.now()}.json`
     a.click()
     URL.revokeObjectURL(url2)
   }
@@ -97,30 +119,24 @@ export default function App() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result)
-        // Merge imported state with current
-        const importedState = data.state || {}
-        const importedSettings = data.settings || {}
-        // Update localStorage via hook by setting directly
-        // We'll dispatch by calling updateSettings and toggling each video
-        Object.keys(importedSettings).forEach(k => updateSettings({ [k]: importedSettings[k] }))
-        // For videos, we need to set watched state - toggle each to match imported
-        // Simpler: just replace state wholesale by toggling differences
-        playlist?.items.forEach(v => {
-          const imported = importedState[v.videoId]
-          const current = state[v.videoId] || { watched: false }
-          if (imported && imported.watched !== current.watched) {
-            toggleWatch(v.videoId)
-          }
-          if (imported && imported.notes !== undefined && imported.notes !== (current.notes || "")) {
-            saveNote(v.videoId, imported.notes || "")
-          }
-        })
-      } catch (err) {
+        if (!importData(data)) throw new Error("Invalid backup")
+        window.location.reload()
+      } catch {
         alert("Failed to import backup file")
+        e.target.value = ""
       }
     }
     reader.readAsText(file)
   }
+
+  const libraryView = (
+    <PlaylistLibrary
+      playlists={library}
+      activePlaylistId={activePlaylistId}
+      onOpen={handleOpenPlaylist}
+      onRemove={handleRemovePlaylist}
+    />
+  )
 
   return (
     <div className="app">
@@ -137,6 +153,16 @@ export default function App() {
           </div>
 
           <div className="top-bar__actions">
+            {playlist && (
+              <button
+                onClick={() => setShowLibrary(!showLibrary)}
+                className="btn btn--ghost"
+                type="button"
+              >
+                {showLibrary ? <Play size={16} /> : <LibraryIcon size={16} />}
+                {showLibrary ? "Tracker" : "Library"}
+              </button>
+            )}
             <button onClick={handleExport} className="btn btn--ghost" type="button">
               <Download size={16} />
               Backup
@@ -237,9 +263,41 @@ export default function App() {
         </div>
       </header>
 
-      {playlist ? (
+      {showLibrary || !playlist ? (
+        loading ? (
+          <div className="loading-state" role="status" aria-busy="true">
+            <span className="visually-hidden">Importing playlist</span>
+            <div className="skeleton-list" aria-hidden="true">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div className="skeleton-row" key={i}>
+                  <span className="skeleton skeleton--rank" />
+                  <span className="skeleton skeleton--thumb" />
+                  <span className="skeleton-block">
+                    <span className="skeleton skeleton--title" />
+                    <span className="skeleton skeleton--meta" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          libraryView
+        )
+      ) : (
         <div className="content">
           <main className="main-panel">
+            <div className="playlist-head">
+              <div className="playlist-head__text">
+                <h2 className="playlist-title">{playlistLabel(playlist)}</h2>
+                <div className="playlist-meta">
+                  <span>{playlist.items.length} videos</span>
+                  <span className="playlist-meta__duration">
+                    {formatTotalDuration(playlist.totalDurationSec)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div className="filter-bar">
               <div className="field field--icon filter-bar__search">
                 <Search size={18} className="field__icon" />
@@ -330,28 +388,6 @@ export default function App() {
               updateSettings={updateSettings}
             />
           </aside>
-        </div>
-      ) : loading ? (
-        <div className="loading-state" role="status" aria-busy="true">
-          <span className="visually-hidden">Importing playlist</span>
-          <div className="skeleton-list" aria-hidden="true">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div className="skeleton-row" key={i}>
-                <span className="skeleton skeleton--rank" />
-                <span className="skeleton skeleton--thumb" />
-                <span className="skeleton-block">
-                  <span className="skeleton skeleton--title" />
-                  <span className="skeleton skeleton--meta" />
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="empty empty--start">
-          <img className="empty__logo" src="/logo.svg" alt="" width="48" height="48" />
-          <p>Paste a YouTube playlist URL to begin.</p>
-          <p>Videos stay in playlist order. Click any video to play and take notes.</p>
         </div>
       )}
 
